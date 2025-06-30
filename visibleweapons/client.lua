@@ -1,6 +1,5 @@
--- QBcore + ps-inventory: Alle våpen synlig på kroppen, hver med sin prop
-
-local weaponConfig = {
+-- QBcore + ps-inventory: Alle våpen synlig på kroppen, hver med sin pro
+    local weaponConfig = {
     -- Pistoler
     ['weapon_pistol'] =      { bone = 51826, pos = vector3(0.18, 0.05, 0.1),  rot = vector3(0.0, 90.0, 0.0), prop = 'w_pi_pistol' },
     ['weapon_pistol_mk2'] =  { bone = 51826, pos = vector3(0.19, 0.06, 0.11), rot = vector3(0.0, 90.0, 0.0), prop = 'w_pi_pistolmk2' },
@@ -70,4 +69,42 @@ local weaponConfig = {
     ['weapon_heavysniper'] =      { bone = 24818, pos = vector3(0.27, -0.26, 0.14), rot = vector3(0.0, 0.0, 0.0), prop = 'w_sr_heavysniper' },
     ['weapon_marksmanrifle'] =    { bone = 24818, pos = vector3(0.29, -0.25, 0.14), rot = vector3(0.0, 0.0, 0.0), prop = 'w_sr_marksmanrifle' },
     ['weapon_remotesniper'] =     { bone = 24818, pos = vector3(0.28, -0.24, 0.12), rot = vector3(0.0, 0.0, 0.0), prop = 'w_sr_remotesniper' },
-    ['weapon_heavysniper_mk2'] =  { bone = 24818, pos = vector3(0.29, -0.27, 0.13), rot = vector3(0.0, 0.0, 
+
+}
+
+local attachedProps = {}
+
+function AttachWeaponProp(bone, pos, rot, prop)
+    local ped = PlayerPedId()
+    local model = GetHashKey(prop)
+    RequestModel(model)
+    while not HasModelLoaded(model) do Citizen.Wait(10) end
+    local obj = CreateObject(model, 1.0, 1.0, 1.0, true, true, false)
+    AttachEntityToEntity(obj, ped, GetPedBoneIndex(ped, bone), pos.x, pos.y, pos.z, rot.x, rot.y, rot.z, false, false, false, false, 2, true)
+    table.insert(attachedProps, obj)
+end
+
+function RemoveWeaponProps()
+    for _, obj in ipairs(attachedProps) do
+        if DoesEntityExist(obj) then
+            DeleteEntity(obj)
+        end
+    end
+    attachedProps = {}
+end
+
+Citizen.CreateThread(function()
+    while true do
+        Citizen.Wait(2000)
+        RemoveWeaponProps()
+        local inventory = exports["ps-inventory"]:GetInventoryItems()
+        if inventory then
+            for _, item in pairs(inventory) do
+                local config = weaponConfig[item.name]
+                if config then
+                    AttachWeaponProp(config.bone, config.pos, config.rot, config.prop)
+                end
+            end
+        end
+    end
+end)
