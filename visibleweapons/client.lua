@@ -97,7 +97,9 @@ Citizen.CreateThread(function()
     while true do
         Citizen.Wait(2000)
         RemoveWeaponProps()
-        local inventory = exports["ps-inventory"]:GetInventoryItems()
+        local QBCore = exports['qb-core']:GetCoreObject()
+        local PlayerData = QBCore.Functions.GetPlayerData()
+        local inventory = PlayerData and PlayerData.items or {}
         if inventory then
             for _, item in pairs(inventory) do
                 local config = weaponConfig[item.name]
